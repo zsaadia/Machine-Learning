@@ -1,0 +1,101 @@
+---
+title: "Customer Segmentation with K-means Clustering"
+author: Zoha Saadia
+output: html_document
+date: "2025-07-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This project uses K-Means clustering to segment mall customers based on their age, annual income, and spending score. The goal is to identify customer groups for targeted marketing strategies.
+
+## Load Libraries
+
+```{r}
+library(cluster)
+library(factoextra)
+library(ggplot2)
+library(dplyr)
+```
+
+## Load Data
+
+```{r}
+df <- read.csv("Mall_Customers.csv")
+head(df)
+```
+
+## Exploratory Data Analysis
+
+```{r}
+summary(df)
+table(df$Gender)
+
+ggplot(df, aes(x = Age)) +
+  geom_histogram(binwidth = 5, fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Age Distribution")
+
+ggplot(df, aes(x = Annual.Income..k.., y = Spending.Score..1.100.)) +
+  geom_point(color = "darkblue") +
+  theme_minimal() +
+  labs(title = "Income vs Spending Score")
+```
+
+## Data Preprocessing
+
+```{r}
+df_num <- df %>% select(Age, Annual.Income..k.., Spending.Score..1.100.)
+df_scaled <- scale(df_num)
+```
+
+## Determine Optimal Number of Clusters
+
+```{r}
+fviz_nbclust(df_scaled, kmeans, method = "wss") +
+  geom_vline(xintercept = 5, linetype = 2) +
+  labs(title = "Elbow Method for Optimal Clusters")
+```
+
+## Apply K-Means Clustering
+
+```{r}
+set.seed(123)
+kmeans_result <- kmeans(df_scaled, centers = 5, nstart = 25)
+df$Cluster <- as.factor(kmeans_result$cluster)
+```
+
+## Visualize Clusters
+
+```{r}
+fviz_cluster(kmeans_result, data = df_scaled,
+             ellipse.type = "euclid",
+             geom = "point",
+             stand = FALSE,
+             palette = "jco",
+             ggtheme = theme_minimal()) +
+  labs(title = "Customer Segments")
+```
+
+## Cluster Profiles
+
+```{r}
+cluster_summary <- aggregate(df_num, by = list(Cluster = df$Cluster), mean)
+cluster_summary
+```
+
+## Insights & Recommendations
+
+Cluster 1: High income, high spending — Target with premium offers.  
+Cluster 2: Low income, high spending — Potential risk, offer budget-conscious value.  
+Cluster 3: High income, low spending — Re-engage with loyalty programs.  
+Cluster 4: Average income, moderate spending — Upsell with tailored promotions.  
+Cluster 5: Young low-income group — Grow with entry-level products.
+
+## Conclusion
+
+K-Means clustering provided valuable insights into customer behavior. These segments can inform marketing strategies, customer retention, and product offerings.
